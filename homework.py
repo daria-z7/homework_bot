@@ -11,8 +11,7 @@ import telegram
 from logging import StreamHandler
 from http import HTTPStatus
 
-from exception import InvalidJsonKey, URLNotResponding
-from exception import URLNotValid, UnknownStatus
+from exception import URLNotResponding, URLNotValid
 
 load_dotenv()
 
@@ -92,13 +91,13 @@ def parse_status(homework):
     JsonKey = 'status'
     homework_status = homework.get(JsonKey)
     if homework_status is None:
-        raise InvalidJsonKey(JsonKey)
+        raise KeyError
 
     if homework_status in HOMEWORK_STATUSES.keys():
         verdict = HOMEWORK_STATUSES[homework_status]
         return f'Изменился статус проверки работы "{homework_name}". {verdict}'
     else:
-        raise UnknownStatus(homework_status)
+        raise KeyError
 
 
 def check_tokens():
@@ -156,13 +155,6 @@ def main():
             current_timestamp = int(time.time())
             time.sleep(RETRY_TIME)
 
-        except UnknownStatus as error:
-            logger.error(error.message)
-            if ContinueFlag is True:
-                send_message(bot, error.message)
-            ContinueFlag = False
-            time.sleep(RETRY_TIME)
-
         except URLNotValid as error:
             logger.error(error.message)
             if ContinueFlag is True:
@@ -171,13 +163,6 @@ def main():
             time.sleep(RETRY_TIME)
 
         except URLNotResponding as error:
-            logger.error(error.message)
-            if ContinueFlag is True:
-                send_message(bot, error.message)
-            ContinueFlag = False
-            time.sleep(RETRY_TIME)
-
-        except InvalidJsonKey as error:
             logger.error(error.message)
             if ContinueFlag is True:
                 send_message(bot, error.message)

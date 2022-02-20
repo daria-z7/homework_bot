@@ -4,14 +4,13 @@ import time
 import sys
 
 import requests
-import validators
 
 from dotenv import load_dotenv
 import telegram
 from logging import StreamHandler
 from http import HTTPStatus
 
-from exception import URLNotResponding, URLNotValid
+from exception import URLNotResponding
 
 load_dotenv()
 
@@ -59,11 +58,9 @@ def get_api_answer(current_timestamp):
         params=params
     ).status_code != HTTPStatus.OK:
         raise URLNotResponding(ENDPOINT)
-    elif validators.url(ENDPOINT) is True:
+    else:
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
         return response.json()
-    else:
-        raise URLNotValid(ENDPOINT)
 
 
 def check_response(response):
@@ -154,13 +151,6 @@ def main():
             ContinueFlag = True
 
             current_timestamp = int(time.time())
-            time.sleep(RETRY_TIME)
-
-        except URLNotValid as error:
-            logger.error(error.message)
-            if ContinueFlag is True:
-                send_message(bot, error.message)
-            ContinueFlag = False
             time.sleep(RETRY_TIME)
 
         except URLNotResponding as error:

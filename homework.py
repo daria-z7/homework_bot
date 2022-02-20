@@ -114,6 +114,7 @@ def check_tokens():
     return True
 
 
+# flake8: noqa: C901
 def main():
     """Основная логика работы бота."""
     CheckConstantsFlag = check_tokens()

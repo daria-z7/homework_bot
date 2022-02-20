@@ -11,7 +11,8 @@ import telegram
 from logging import StreamHandler
 from http import HTTPStatus
 
-from exception import URLNotValid, UnknownStatus, InvalidJsonKey, URLNotResponding
+from exception import InvalidJsonKey, URLNotResponding
+from exception import URLNotValid, UnknownStatus
 
 load_dotenv()
 
@@ -53,8 +54,12 @@ def get_api_answer(current_timestamp):
     """Получает ответ от эндпоинта."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
-    if requests.get(ENDPOINT, headers=HEADERS, params=params).status_code != HTTPStatus.OK:
-        raise URLNotResponding(ENDPOINT) 
+    if requests.get(
+        ENDPOINT,
+        headers=HEADERS,
+        params=params
+    ).status_code != HTTPStatus.OK:
+        raise URLNotResponding(ENDPOINT)
     elif validators.url(ENDPOINT) is True:
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
         return response.json()
@@ -81,7 +86,7 @@ def check_response(response):
 def parse_status(homework):
     """Получает статус последней домашней работы."""
     JsonKey = 'homework_name'
-    homework_name =  homework.get(JsonKey)
+    homework_name = homework.get(JsonKey)
     if homework_name is None:
         raise KeyError
     JsonKey = 'status'
@@ -99,13 +104,13 @@ def parse_status(homework):
 def check_tokens():
     """Проверяет переменные окружения."""
     if PRACTICUM_TOKEN is None:
-        logger.critical(f'Переменная окружения PRACTICUM_TOKEN отсутствует')
+        logger.critical('Переменная окружения PRACTICUM_TOKEN отсутствует')
         return False
     if TELEGRAM_TOKEN is None:
-        logger.critical(f'Переменная окружения TELEGRAM_TOKEN отсутствует')
+        logger.critical('Переменная окружения TELEGRAM_TOKEN отсутствует')
         return False
     if TELEGRAM_CHAT_ID is None:
-        logger.critical(f'Переменная окружения TELEGRAM_CHAT_ID отсутствует')
+        logger.critical('Переменная окружения TELEGRAM_CHAT_ID отсутствует')
         return False
     return True
 
@@ -114,16 +119,16 @@ def main():
     """Основная логика работы бота."""
     CheckConstantsFlag = check_tokens()
     if CheckConstantsFlag is False:
-        return 
+        return
 
     try:
         bot = telegram.Bot(token=TELEGRAM_TOKEN)
     except Exception as error:
-        logger.critical(f'Переменная окружения TELEGRAM_TOKEN содержит ошибку - {error}')
+        logger.critical(f'Переменная TELEGRAM_TOKEN с ошибкой - {error}')
         return
 
     current_timestamp = int(time.time())
-    ContinueFlag : bool = True
+    ContinueFlag: bool = True
 
     while True:
         try:
@@ -134,7 +139,7 @@ def main():
                 send_message(bot, message)
                 return
             elif response.get('code') == 'UnknownError':
-                message = 'Предоставлены неверные ключи для доступа к эндпойнту'
+                message = 'Неверные ключи для доступа к эндпойнту'
                 logger.error(message)
                 send_message(bot, message)
                 return
@@ -150,7 +155,7 @@ def main():
 
             current_timestamp = int(time.time())
             time.sleep(RETRY_TIME)
-        
+
         except UnknownStatus as error:
             logger.error(error.message)
             if ContinueFlag is True:
@@ -178,7 +183,7 @@ def main():
                 send_message(bot, error.message)
             ContinueFlag = False
             time.sleep(RETRY_TIME)
-        
+
         except AssertionError:
             logger.error('Неверный тип данных')
             if ContinueFlag is True:
